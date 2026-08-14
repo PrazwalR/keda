@@ -110,6 +110,7 @@ New deprecation(s):
 
 ### Other
 
+- **General**: Close the `httptest` servers created by the RabbitMQ scaler unit tests and record handler assertions instead of calling `t.Error` from the handler goroutine, removing ~2,600 leaked servers per run and the `Log in goroutine after <test> has completed` panics that failed unrelated `pkg/scalers` tests ([#8034](https://github.com/kedacore/keda/issues/8034))
 - TODO ([#XXX](https://github.com/kedacore/keda/issues/XXX))
 
 ## v2.20.2

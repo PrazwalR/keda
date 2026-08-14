@@ -14,6 +14,7 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -440,6 +441,62 @@ func Test_getVhostAndPathFromURL(t *testing.T) {
 	}
 }
 
+// rabbitMQAPIStub is an httptest server that serves a single canned RabbitMQ management API
+// response and records every request whose path does not match expectedPath.
+//
+// Failures are recorded rather than reported from the handler on purpose. A handler runs on its own
+// goroutine, so if the server outlives the test that created it, calling t.Error from there panics
+// the whole test binary with "Log in goroutine after <test> has completed" and Go attributes the
+// failure to whichever test happened to be running. close reports them on the test's goroutine
+// instead, after the server has shut down.
+type rabbitMQAPIStub struct {
+	server       *httptest.Server
+	expectedPath string
+
+	mu        sync.Mutex
+	badPaths  []string
+	writeErrs []error
+}
+
+func newRabbitMQAPIStub(expectedPath string, responseStatus int, response string) *rabbitMQAPIStub {
+	stub := &rabbitMQAPIStub{expectedPath: expectedPath}
+	stub.server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.RequestURI != expectedPath {
+			stub.mu.Lock()
+			stub.badPaths = append(stub.badPaths, r.RequestURI)
+			stub.mu.Unlock()
+		}
+
+		w.WriteHeader(responseStatus)
+		if _, err := w.Write([]byte(response)); err != nil {
+			stub.mu.Lock()
+			stub.writeErrs = append(stub.writeErrs, err)
+			stub.mu.Unlock()
+		}
+	}))
+	return stub
+}
+
+func (s *rabbitMQAPIStub) url() string {
+	return s.server.URL
+}
+
+// close shuts the server down, which waits for in-flight handlers to return, and then reports
+// whatever they recorded. It must run before the test that created the stub completes.
+func (s *rabbitMQAPIStub) close(t *testing.T) {
+	t.Helper()
+	s.server.Close()
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, got := range s.badPaths {
+		t.Errorf("expected request path %q, but got %q", s.expectedPath, got)
+	}
+	for _, err := range s.writeErrs {
+		t.Errorf("failed to write stub response: %v", err)
+	}
+}
+
 func TestGetQueueInfo(t *testing.T) {
 	var allTestData []getQueueInfoTestData
 	allTestData = append(allTestData, testQueueInfoTestDataSingleVhost...)
@@ -457,20 +514,13 @@ func TestGetQueueInfo(t *testing.T) {
 
 	for _, testData := range allTestData {
 		vhost, path := getVhostAndPathFromURL(testData.urlPath, testData.extraMetadata["vhostName"])
-		var apiStub = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			expectedPath := fmt.Sprintf("%s/api/queues%s/evaluate_trials", path, vhost)
-			if r.RequestURI != expectedPath {
-				t.Error("Expect request path to =", expectedPath, "but it is", r.RequestURI)
-			}
+		apiStub := newRabbitMQAPIStub(
+			fmt.Sprintf("%s/api/queues%s/evaluate_trials", path, vhost),
+			testData.responseStatus,
+			testData.response,
+		)
 
-			w.WriteHeader(testData.responseStatus)
-			_, err := w.Write([]byte(testData.response))
-			if err != nil {
-				t.Error("Expect request path to =", testData.response, "but it is", err)
-			}
-		}))
-
-		resolvedEnv := map[string]string{host: fmt.Sprintf("%s%s%s", apiStub.URL, path, vhost), "plainHost": apiStub.URL}
+		resolvedEnv := map[string]string{host: fmt.Sprintf("%s%s%s", apiStub.url(), path, vhost), "plainHost": apiStub.url()}
 
 		metadata := map[string]string{
 			"queueName":   "evaluate_trials",
@@ -512,6 +562,8 @@ func TestGetQueueInfo(t *testing.T) {
 		} else if !strings.Contains(err.Error(), testData.response) {
 			t.Error("Expect error to be like '", testData.response, "' but it's '", err, "'")
 		}
+
+		apiStub.close(t)
 	}
 }
 
@@ -685,20 +737,13 @@ func TestGetQueueInfoWithRegex(t *testing.T) {
 
 	for _, testData := range allTestData {
 		vhost, path := getVhostAndPathFromURL(testData.urlPath, testData.extraMetadata["vhostName"])
-		var apiStub = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			expectedPath := fmt.Sprintf("%s/api/queues%s?page=1&use_regex=true&pagination=false&name=%%5Eevaluate_trials%%24&page_size=100", path, vhost)
-			if r.RequestURI != expectedPath {
-				t.Error("Expect request path to =", expectedPath, "but it is", r.RequestURI)
-			}
+		apiStub := newRabbitMQAPIStub(
+			fmt.Sprintf("%s/api/queues%s?page=1&use_regex=true&pagination=false&name=%%5Eevaluate_trials%%24&page_size=100", path, vhost),
+			testData.responseStatus,
+			testData.response,
+		)
 
-			w.WriteHeader(testData.responseStatus)
-			_, err := w.Write([]byte(testData.response))
-			if err != nil {
-				t.Error("Expect request path to =", testData.response, "but it is", err)
-			}
-		}))
-
-		resolvedEnv := map[string]string{host: fmt.Sprintf("%s%s%s", apiStub.URL, path, vhost), "plainHost": apiStub.URL}
+		resolvedEnv := map[string]string{host: fmt.Sprintf("%s%s%s", apiStub.url(), path, vhost), "plainHost": apiStub.url()}
 
 		metadata := map[string]string{
 			"queueName":   "^evaluate_trials$",
@@ -740,6 +785,8 @@ func TestGetQueueInfoWithRegex(t *testing.T) {
 		} else if !strings.Contains(err.Error(), testData.response) {
 			t.Error("Expect error to be like '", testData.response, "' but it's '", err, "'")
 		}
+
+		apiStub.close(t)
 	}
 }
 
@@ -770,20 +817,13 @@ func TestGetPageSizeWithRegex(t *testing.T) {
 
 	for _, testData := range allTestData {
 		vhost, path := getVhostAndPathFromURL(testData.queueInfo.urlPath, testData.queueInfo.extraMetadata["vhostName"])
-		var apiStub = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			expectedPath := fmt.Sprintf("%s/api/queues%s?page=1&use_regex=true&pagination=false&name=%%5Eevaluate_trials%%24&page_size=%d", path, vhost, testData.pageSize)
-			if r.RequestURI != expectedPath {
-				t.Error("Expect request path to =", expectedPath, "but it is", r.RequestURI)
-			}
+		apiStub := newRabbitMQAPIStub(
+			fmt.Sprintf("%s/api/queues%s?page=1&use_regex=true&pagination=false&name=%%5Eevaluate_trials%%24&page_size=%d", path, vhost, testData.pageSize),
+			testData.queueInfo.responseStatus,
+			testData.queueInfo.response,
+		)
 
-			w.WriteHeader(testData.queueInfo.responseStatus)
-			_, err := w.Write([]byte(testData.queueInfo.response))
-			if err != nil {
-				t.Error("Expect request path to =", testData.queueInfo.response, "but it is", err)
-			}
-		}))
-
-		resolvedEnv := map[string]string{host: fmt.Sprintf("%s%s%s", apiStub.URL, path, vhost), "plainHost": apiStub.URL}
+		resolvedEnv := map[string]string{host: fmt.Sprintf("%s%s%s", apiStub.url(), path, vhost), "plainHost": apiStub.url()}
 
 		metadata := map[string]string{
 			"queueName":   "^evaluate_trials$",
@@ -816,6 +856,8 @@ func TestGetPageSizeWithRegex(t *testing.T) {
 		if !active {
 			t.Error("Expect to be active")
 		}
+
+		apiStub.close(t)
 	}
 }
 
@@ -892,20 +934,13 @@ var testRegexQueueInfoNavigationTestData = []getQueueInfoNavigationTestData{
 
 func TestRegexQueueMissingError(t *testing.T) {
 	for _, testData := range testRegexQueueInfoNavigationTestData {
-		var apiStub = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			expectedPath := "/api/queues/%2F?page=1&use_regex=true&pagination=false&name=evaluate_trials&page_size=100"
-			if r.RequestURI != expectedPath {
-				t.Error("Expect request path to =", expectedPath, "but it is", r.RequestURI)
-			}
+		apiStub := newRabbitMQAPIStub(
+			"/api/queues/%2F?page=1&use_regex=true&pagination=false&name=evaluate_trials&page_size=100",
+			http.StatusOK,
+			testData.response,
+		)
 
-			w.WriteHeader(http.StatusOK)
-			_, err := w.Write([]byte(testData.response))
-			if err != nil {
-				t.Error("Expect request path to =", testData.response, "but it is", err)
-			}
-		}))
-
-		resolvedEnv := map[string]string{host: apiStub.URL, "plainHost": apiStub.URL}
+		resolvedEnv := map[string]string{host: apiStub.url(), "plainHost": apiStub.url()}
 
 		metadata := map[string]string{
 			"queueName":   "evaluate_trials",
@@ -935,6 +970,8 @@ func TestRegexQueueMissingError(t *testing.T) {
 		if testData.isError && err == nil {
 			t.Error("Expected error but got success")
 		}
+
+		apiStub.close(t)
 	}
 }
 
