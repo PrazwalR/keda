@@ -196,6 +196,7 @@ func TestLokiScalerExecuteLogQLQuery(t *testing.T) {
 					t.Fatal(err)
 				}
 			}))
+			defer server.Close()
 
 			scaler := lokiScaler{
 				metadata: lokiMetadata{
@@ -237,6 +238,7 @@ func TestLokiScalerTenantHeader(t *testing.T) {
 			t.Fatal(err)
 		}
 	}))
+	defer server.Close()
 
 	scaler := lokiScaler{
 		metadata: lokiMetadata{

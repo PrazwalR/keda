@@ -172,6 +172,7 @@ func TestGrapScalerExecuteGrapQuery(t *testing.T) {
 					t.Fatal(err)
 				}
 			}))
+			defer server.Close()
 
 			scaler := graphiteScaler{
 				metadata: &graphiteMetadata{

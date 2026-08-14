@@ -78,6 +78,7 @@ func TestParseAzurePipelinesMetadata(t *testing.T) {
 					_, _ = w.Write([]byte(`{"count":1,"value":[{"id":1}]}`))
 				}
 			}))
+			defer apiStub.Close()
 
 			// set urls into local stub only if they are already defined
 			if _, ok := testData.resolvedEnv["AZP_URL"]; ok {
@@ -137,6 +138,7 @@ func TestValidateAzurePipelinesPool(t *testing.T) {
 				w.WriteHeader(testData.httpCode)
 				_, _ = w.Write([]byte(testData.response))
 			}))
+			defer apiStub.Close()
 
 			authParams := map[string]string{
 				"organizationURL":     apiStub.URL,
@@ -170,6 +172,7 @@ func TestAzurePipelinesGetMetricSpecForScaling(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte(`{"id":1}`))
 		}))
+		defer apiStub.Close()
 
 		authParams := map[string]string{
 			"organizationURL":     apiStub.URL,
@@ -218,6 +221,7 @@ func TestAzurePipelinesMatchedAgent(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(buildLoadJSON())
 	}))
+	defer apiStub.Close()
 
 	meta := getMatchedAgentMetaData(apiStub.URL)
 
@@ -246,6 +250,7 @@ func TestAzurePipelinesDelayed(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(buildLoadJSON())
 	}))
+	defer apiStub.Close()
 
 	meta := getMatchedAgentMetaData(apiStub.URL)
 
@@ -294,6 +299,7 @@ func TestAzurePipelinesMatchedDemandAgent(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(buildLoadJSON())
 	}))
+	defer apiStub.Close()
 
 	meta := getDemandJobMetaData(apiStub.URL)
 
@@ -318,6 +324,7 @@ func TestAzurePipelinesNonMatchedDemandAgent(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(buildLoadJSON())
 	}))
+	defer apiStub.Close()
 
 	meta := getMismatchDemandJobMetaData(apiStub.URL)
 	meta.RequireAllDemands = true
@@ -343,6 +350,7 @@ func TestAzurePipelinesMatchedDemandAgentWithRequireAllDemands(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(buildLoadJSON())
 	}))
+	defer apiStub.Close()
 
 	meta := getDemandJobMetaData(apiStub.URL)
 	meta.RequireAllDemands = true
@@ -369,6 +377,7 @@ func TestAzurePipelinesMatchedDemandAgentWithRequireAllDemandsAndIgnoreOthers(t 
 		// nosemgrep: no-direct-write-to-responsewriter
 		_, _ = w.Write(buildLoadJSON())
 	}))
+	defer apiStub.Close()
 
 	meta := getDemandJobSubsetMetadata(apiStub.URL)
 	meta.RequireAllDemandsAndIgnoreOthers = true
@@ -396,6 +405,7 @@ func TestAzurePipelinesNotMatchedPartialRequiredTriggerDemands(t *testing.T) {
 		// nosemgrep: no-direct-write-to-responsewriter
 		_, _ = w.Write(buildLoadJSON())
 	}))
+	defer apiStub.Close()
 
 	meta := getDemandJobMetaData(apiStub.URL)
 	meta.RequireAllDemands = true
@@ -423,6 +433,7 @@ func TestAzurePipelinesDemandsComparisonDefaultCaseSensitive(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(buildLoadJSON())
 	}))
+	defer apiStub.Close()
 
 	meta := getDemandJobMetaData(apiStub.URL)
 	meta.RequireAllDemands = true
@@ -449,6 +460,7 @@ func TestAzurePipelinesDemandsComparisonCaseInsensitive(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(buildLoadJSON())
 	}))
+	defer apiStub.Close()
 
 	meta := getDemandJobMetaData(apiStub.URL)
 	meta.RequireAllDemands = true
@@ -482,6 +494,7 @@ func TestAzurePipelinesAssignedJobNotCounted(t *testing.T) {
 		// nosemgrep: no-direct-write-to-responsewriter
 		_, _ = w.Write([]byte(response))
 	}))
+	defer apiStub.Close()
 
 	meta := getMatchedAgentMetaData(apiStub.URL)
 	// Clear Parent so the scaler counts every non-dead job (no parent/demands filtering).
@@ -515,6 +528,7 @@ func TestAzurePipelinesQueuedAndAssignedMixed(t *testing.T) {
 		// nosemgrep: no-direct-write-to-responsewriter
 		_, _ = w.Write([]byte(response))
 	}))
+	defer apiStub.Close()
 
 	meta := getMatchedAgentMetaData(apiStub.URL)
 	meta.Parent = ""
@@ -569,6 +583,7 @@ func TestAzurePipelinesQueueURLTest(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 				_, _ = w.Write(buildLoadJSON())
 			}))
+			defer apiStub.Close()
 
 			meta := testData.metadata
 			meta.OrganizationName = "testOrg"

@@ -218,6 +218,7 @@ func TestBearerAuth(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"components":[{"id": "82328e93e", "tasks": 32, "str": "64", "k":"1k","wrong":"NaN"}],"count":2.43}`))
 	}))
+	defer apiStub.Close()
 
 	metadata := map[string]string{
 		"url":           apiStub.URL,

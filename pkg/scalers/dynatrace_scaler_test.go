@@ -241,6 +241,7 @@ func TestDynatraceGetMetricByQuery(t *testing.T) {
 					}
 				}
 			}))
+			defer apiStub.Close()
 
 			metadata := map[string]string{"threshold": "100", "query": "dql-query", "host": apiStub.URL, "queryPollingWait": "0s", "queryPollingTries": "2"}
 			auth := map[string]string{"token": "123ws"}

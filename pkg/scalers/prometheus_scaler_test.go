@@ -336,6 +336,7 @@ func TestPrometheusScalerExecutePromQuery(t *testing.T) {
 					t.Fatal(err)
 				}
 			}))
+			defer server.Close()
 
 			scaler := prometheusScaler{
 				metadata: &prometheusMetadata{
@@ -385,6 +386,7 @@ func TestPrometheusScalerCustomHeaders(t *testing.T) {
 			t.Fatal(err)
 		}
 	}))
+	defer server.Close()
 
 	scaler := prometheusScaler{
 		metadata: &prometheusMetadata{
@@ -430,6 +432,7 @@ func TestPrometheusScalerExecutePromQueryParameters(t *testing.T) {
 			t.Fatal(err)
 		}
 	}))
+	defer server.Close()
 	scaler := prometheusScaler{
 		metadata: &prometheusMetadata{
 			ServerAddress:    server.URL,
@@ -492,7 +495,7 @@ h+VRH7M7/22LuSxeKoQaRqeBRbvGup/oHGr9Ks/sVi0EQRUqwB45QLNiF1bi
 
 	newFakeServer := func(t *testing.T) *httptest.Server {
 		t.Helper()
-		return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, "/v1/projects/my-fake-project/location/global/prometheus/api/v1/query", r.URL.Path)
 			assert.True(t, r.URL.Query().Has("time"))
 			assert.Equal(t, "sum(rate(http_requests_total{instance=\"my-instance\"}[5m]))", r.URL.Query().Get("query"))
@@ -511,6 +514,8 @@ h+VRH7M7/22LuSxeKoQaRqeBRbvGup/oHGr9Ks/sVi0EQRUqwB45QLNiF1bi
 				},
 			}))
 		}))
+		t.Cleanup(srv.Close)
+		return srv
 	}
 
 	tests := map[string]struct {

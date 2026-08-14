@@ -259,6 +259,7 @@ func apiStubHandler304() *httptest.Server {
 
 func TestNewGitHubRunnerScaler_QueueLength_NoRateLeft(t *testing.T) {
 	var apiStub = apiStubHandler(false, false)
+	defer apiStub.Close()
 
 	meta := getGitHubTestMetaData(apiStub.URL)
 
@@ -283,6 +284,7 @@ func TestNewGitHubRunnerScaler_QueueLength_NoRateLeft(t *testing.T) {
 
 func TestNewGitHubRunnerScaler_QueueLength_SingleRepo(t *testing.T) {
 	var apiStub = apiStubHandler(true, false)
+	defer apiStub.Close()
 
 	meta := getGitHubTestMetaData(apiStub.URL)
 
@@ -307,6 +309,7 @@ func TestNewGitHubRunnerScaler_QueueLength_SingleRepo(t *testing.T) {
 
 func TestNewGitHubRunnerScaler_QueueLength_SingleRepo_ExtraRunnerLabels(t *testing.T) {
 	var apiStub = apiStubHandler(true, false)
+	defer apiStub.Close()
 
 	meta := getGitHubTestMetaData(apiStub.URL)
 
@@ -331,6 +334,7 @@ func TestNewGitHubRunnerScaler_QueueLength_SingleRepo_ExtraRunnerLabels(t *testi
 
 func TestNewGitHubRunnerScaler_QueueLength_SingleRepo_LessRunnerLabels(t *testing.T) {
 	var apiStub = apiStubHandler(true, false)
+	defer apiStub.Close()
 
 	meta := getGitHubTestMetaData(apiStub.URL)
 
@@ -354,6 +358,7 @@ func TestNewGitHubRunnerScaler_QueueLength_SingleRepo_LessRunnerLabels(t *testin
 }
 func TestNewGitHubRunnerScaler_QueueLength_SingleRepo_WithScalerDefaultLabels_WithJobDefaultLabels(t *testing.T) {
 	var apiStub = apiStubHandler(true, false)
+	defer apiStub.Close()
 
 	meta := getGitHubTestMetaData(apiStub.URL)
 
@@ -379,6 +384,7 @@ func TestNewGitHubRunnerScaler_QueueLength_SingleRepo_WithScalerDefaultLabels_Wi
 
 func TestNewGitHubRunnerScaler_QueueLength_SingleRepo_WithScalerDefaultLabels_WithoutJobDefaultLabels(t *testing.T) {
 	var apiStub = apiStubHandlerCustomJob(true, false, testGhWFJobResponseOnlyCustomLabels)
+	defer apiStub.Close()
 
 	meta := getGitHubTestMetaData(apiStub.URL)
 
@@ -404,6 +410,7 @@ func TestNewGitHubRunnerScaler_QueueLength_SingleRepo_WithScalerDefaultLabels_Wi
 
 func TestNewGitHubRunnerScaler_QueueLength_SingleRepo_WithoutScalerDefaultLabels_WithJobDefaultLabels(t *testing.T) {
 	var apiStub = apiStubHandler(true, false)
+	defer apiStub.Close()
 
 	meta := getGitHubTestMetaData(apiStub.URL)
 
@@ -429,6 +436,7 @@ func TestNewGitHubRunnerScaler_QueueLength_SingleRepo_WithoutScalerDefaultLabels
 
 func TestNewGitHubRunnerScaler_QueueLength_SingleRepo_WithoutScalerDefaultLabels_WithoutJobDefaultLabels(t *testing.T) {
 	var apiStub = apiStubHandlerCustomJob(true, false, testGhWFJobResponseOnlyCustomLabels)
+	defer apiStub.Close()
 
 	meta := getGitHubTestMetaData(apiStub.URL)
 
@@ -454,6 +462,7 @@ func TestNewGitHubRunnerScaler_QueueLength_SingleRepo_WithoutScalerDefaultLabels
 
 func TestNewGitHubRunnerScaler_QueueLength_SingleRepo_WithScalerLabels_WithoutJobLabels(t *testing.T) {
 	var apiStub = apiStubHandlerCustomJob(true, false, testGhWFJobResponseNoLabels)
+	defer apiStub.Close()
 
 	meta := getGitHubTestMetaData(apiStub.URL)
 
@@ -480,6 +489,7 @@ func TestNewGitHubRunnerScaler_QueueLength_SingleRepo_WithScalerLabels_WithoutJo
 
 func TestNewGitHubRunnerScaler_QueueLength_SingleRepo_WithNotModified(t *testing.T) {
 	var apiStub = apiStubHandler304()
+	defer apiStub.Close()
 
 	meta := getGitHubTestMetaData(apiStub.URL)
 
@@ -532,6 +542,7 @@ func TestNewGitHubRunnerScaler_QueueLength_SingleRepo_WithNotModified(t *testing
 
 func TestNewGitHubRunnerScaler_404(t *testing.T) {
 	var apiStub = apiStubHandler404()
+	defer apiStub.Close()
 
 	meta := getGitHubTestMetaData(apiStub.URL)
 
@@ -601,6 +612,7 @@ func TestNewGitHubRunnerScaler_BadURL(t *testing.T) {
 
 func TestNewGitHubRunnerScaler_QueueLength_NoRunnerLabels(t *testing.T) {
 	var apiStub = apiStubHandler(true, false)
+	defer apiStub.Close()
 
 	meta := getGitHubTestMetaData(apiStub.URL)
 
@@ -625,6 +637,7 @@ func TestNewGitHubRunnerScaler_QueueLength_NoRunnerLabels(t *testing.T) {
 
 func TestNewGitHubRunnerScaler_QueueLength_MultiRepo_Assigned(t *testing.T) {
 	var apiStub = apiStubHandler(true, false)
+	defer apiStub.Close()
 
 	meta := getGitHubTestMetaData(apiStub.URL)
 
@@ -653,6 +666,7 @@ func TestNewGitHubRunnerScaler_QueueLength_MultiRepo_Assigned(t *testing.T) {
 
 func TestNewGitHubRunnerScaler_QueueLength_MultiRepo_Assigned_OneBad(t *testing.T) {
 	var apiStub = apiStubHandler(true, false)
+	defer apiStub.Close()
 
 	meta := getGitHubTestMetaData(apiStub.URL)
 
@@ -681,6 +695,7 @@ func TestNewGitHubRunnerScaler_QueueLength_MultiRepo_Assigned_OneBad(t *testing.
 
 func TestNewGitHubRunnerScaler_QueueLength_MultiRepo_PulledUserRepos(t *testing.T) {
 	var apiStub = apiStubHandler(true, false)
+	defer apiStub.Close()
 
 	meta := getGitHubTestMetaData(apiStub.URL)
 
@@ -705,6 +720,7 @@ func TestNewGitHubRunnerScaler_QueueLength_MultiRepo_PulledUserRepos(t *testing.
 
 func TestNewGitHubRunnerScaler_QueueLength_MultiRepo_PulledUserRepos_Exceeds30Entries(t *testing.T) {
 	var apiStub = apiStubHandler(true, true)
+	defer apiStub.Close()
 
 	meta := getGitHubTestMetaData(apiStub.URL)
 
@@ -728,6 +744,7 @@ func TestNewGitHubRunnerScaler_QueueLength_MultiRepo_PulledUserRepos_Exceeds30En
 
 func TestNewGitHubRunnerScaler_QueueLength_MultiRepo_PulledOrgRepos(t *testing.T) {
 	var apiStub = apiStubHandler(true, false)
+	defer apiStub.Close()
 
 	meta := getGitHubTestMetaData(apiStub.URL)
 
@@ -753,6 +770,7 @@ func TestNewGitHubRunnerScaler_QueueLength_MultiRepo_PulledOrgRepos(t *testing.T
 
 func TestNewGitHubRunnerScaler_QueueLength_MultiRepo_PulledEntRepos(t *testing.T) {
 	var apiStub = apiStubHandler(true, false)
+	defer apiStub.Close()
 
 	meta := getGitHubTestMetaData(apiStub.URL)
 
@@ -778,6 +796,7 @@ func TestNewGitHubRunnerScaler_QueueLength_MultiRepo_PulledEntRepos(t *testing.T
 
 func TestNewGitHubRunnerScaler_QueueLength_MultiRepo_PulledBadRepos(t *testing.T) {
 	var apiStub = apiStubHandler(true, false)
+	defer apiStub.Close()
 
 	meta := getGitHubTestMetaData(apiStub.URL)
 
@@ -801,6 +820,7 @@ func TestNewGitHubRunnerScaler_QueueLength_MultiRepo_PulledBadRepos(t *testing.T
 
 func TestNewGitHubRunnerScaler_QueueLength_MultiRepo_PulledRepos_NoRate(t *testing.T) {
 	var apiStub = apiStubHandler(false, false)
+	defer apiStub.Close()
 
 	meta := getGitHubTestMetaData(apiStub.URL)
 
