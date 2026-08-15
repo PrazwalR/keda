@@ -261,6 +261,7 @@ func (s *seleniumGridScaler) getSessionsQueueLength(ctx context.Context, logger 
 	if err != nil {
 		return -1, -1, err
 	}
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		msg := fmt.Sprintf("Selenium Grid returned response status code: %d", res.StatusCode)
@@ -268,7 +269,6 @@ func (s *seleniumGridScaler) getSessionsQueueLength(ctx context.Context, logger 
 		return -1, -1, errors.New(msg)
 	}
 
-	defer res.Body.Close()
 	b, err := io.ReadAll(res.Body)
 	if err != nil {
 		logger.Error(err, fmt.Sprintf("Error when reading Selenium Grid response body: %s", err))
