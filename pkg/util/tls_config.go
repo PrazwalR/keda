@@ -173,6 +173,12 @@ func ParseTLSVersion(version string, defaultVersion uint16) (uint16, error) {
 
 func decryptClientKey(clientKey, clientKeyPassword string) ([]byte, error) {
 	block, _ := pem.Decode([]byte(clientKey))
+	// pem.Decode returns a nil block for anything that is not valid PEM. The key comes from a
+	// user-supplied Secret, so dereferencing it unchecked lets malformed input panic the scale
+	// loop goroutine, which cannot be recovered and takes the operator down.
+	if block == nil {
+		return nil, fmt.Errorf("failed to decode client key: not a valid PEM block")
+	}
 
 	key, err := pkcs8.ParsePKCS8PrivateKey(block.Bytes, []byte(clientKeyPassword))
 	if err != nil {

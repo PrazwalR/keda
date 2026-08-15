@@ -441,3 +441,30 @@ func TestParseTLSCipherListEnvVar(t *testing.T) {
 		}
 	})
 }
+
+// The client key comes from a user-supplied Secret. pem.Decode returns a nil block for anything
+// that is not valid PEM, and dereferencing it used to panic the scale-loop goroutine, which cannot
+// be recovered and takes the whole operator down.
+func TestDecryptClientKeyRejectsNonPEM(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		clientKey string
+	}{
+		{"plain text", "not-a-pem"},
+		{"empty", ""},
+		{"truncated header", "-----BEGIN PRIVATE KEY-----"},
+		{"base64 without pem envelope", "TUlJRXZRSUJBREFOQmdrcWhraUc5dzBCQVFFRkFBU0NC"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Fatalf("decryptClientKey panicked on a non-PEM client key: %v", r)
+				}
+			}()
+
+			if _, err := decryptClientKey(tc.clientKey, "somepassword"); err == nil {
+				t.Error("expected an error for a non-PEM client key, got nil")
+			}
+		})
+	}
+}
