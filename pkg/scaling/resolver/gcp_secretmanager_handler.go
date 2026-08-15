@@ -94,7 +94,13 @@ func (vh *GCPSecretManagerHandler) Initialize(ctx context.Context, client client
 			return fmt.Errorf("project_id field is missing in the json credentials")
 		}
 
-		vh.gcpProjectID = project.(string)
+		// A JSON null (or any non-string) leaves the key present with a non-string value, so an
+		// unchecked assertion here panics on credentials the user controls.
+		projectID, ok := project.(string)
+		if !ok {
+			return fmt.Errorf("project_id field in the json credentials is not a string")
+		}
+		vh.gcpProjectID = projectID
 
 	case kedav1alpha1.PodIdentityProviderGCP:
 		if vh.gcpSecretsManagerClient, err = secretmanager.NewClient(ctx); err != nil {
