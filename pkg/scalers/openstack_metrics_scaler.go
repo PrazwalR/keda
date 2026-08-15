@@ -274,7 +274,7 @@ func (s *openstackMetricScaler) readOpenstackMetrics(ctx context.Context) (float
 
 	if errConvertJSON != nil {
 		s.logger.Error(errConvertJSON, "Failed to convert Body format response to json")
-		return defaultValueWhenError, err
+		return defaultValueWhenError, errConvertJSON
 	}
 
 	if body == nil {
